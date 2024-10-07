@@ -1,0 +1,31 @@
+{
+  "name": "yakv",
+  "version": "1.0.0",
+  "description": "Yet another lightweight in-memory key-value storage",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/w666/yakv.git"
+  },
+  "keywords": [
+    "key-value", "cache", "in-memory", "database", "storage"
+  ],
+  "author": "Vasily Martynov",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.0",
+    "typescript": "^5.6.2"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@types/jest": "^29.5.13",
+    "@types/node": "^22.7.4",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2"
+  }
+}
