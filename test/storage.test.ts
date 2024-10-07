@@ -1,8 +1,8 @@
 import KVStore from '../src/kvstore';
-import { retry } from './testUtils';
+import { retry, sleep } from './testUtils';
 
 describe('Storage test', () => {
-    test('Get item that does not exit', async () => {
+    test('Get item that does not exist', async () => {
         const store = new KVStore();
         expect(store.get('key1')).toEqual(undefined);
     });
@@ -105,5 +105,35 @@ describe('Storage test', () => {
         const res = store.set(1, value);
         expect(res).toEqual(true);
         expect(store.get(1)).not.toBeDefined();
+    });
+
+    test('Cleanup deletes expired items', async () => {
+        const store = new KVStore();
+
+        expect(store.getSize()).toEqual(0);
+
+        store.set('key1', { someData: 'test data' }, 10);
+        expect(store.getSize()).toEqual(1);
+        expect(store.get('key1')).toEqual({ someData: 'test data' });
+
+        await sleep(50);
+
+        store.cleanUp();
+
+        expect(store.get('key1')).toEqual(undefined);
+        expect(store.getSize()).toEqual(0);
+    });
+
+    test('Can set default ttl', async () => {
+        const store = new KVStore(1, 20);
+        const res1 = store.set('key1', 'test');
+        expect(res1).toEqual(true);
+        expect(store.get('key1')).toEqual('test');
+
+        await sleep(50);
+
+        const res2 = store.set('key1', 'test');
+        expect(res2).toEqual(true);
+        expect(store.get('key1')).toEqual('test');
     });
 });

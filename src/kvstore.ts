@@ -14,7 +14,7 @@ class KVStore {
         this.store = new Map();
     }
 
-    private cleanUp = () => {
+    public cleanUp = () => {
         const timeNow = Date.now();
         const keys = this.store.keys();
         for (const key of keys) {
@@ -43,7 +43,7 @@ class KVStore {
                 return false;
             }
 
-            this.replace(key, value, ttl);
+            this.replace(key, value, timeNow, ttl);
             return true;
         }
 
@@ -57,20 +57,20 @@ class KVStore {
             }
         }
 
-        this.replace(key, value, ttl);
+        this.replace(key, value, timeNow, ttl);
 
         return true;
     }
 
-    private replace(key: string | number, value: unknown, ttl?: number): void {
+    private replace(key: string | number, value: unknown, timeNow: number, ttl?: number): void {
         this.store.set(key, {
-            expireAt: Date.now() + (ttl || this.defaultTTL),
+            expireAt: timeNow + (ttl || this.defaultTTL),
             data: value,
         });
     }
 
     public delete(key: string | number): boolean {
-        return this.delete(key);
+        return this.store.delete(key);
     }
 
     public getSize(): number {
