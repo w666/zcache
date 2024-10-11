@@ -1,4 +1,4 @@
-import KVStore from '../src/kvstore';
+import KVStore from '../src/kvStore';
 import { retry, sleep } from './testUtils';
 
 describe('Storage test', () => {

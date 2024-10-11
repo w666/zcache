@@ -1,6 +1,8 @@
+import axios from 'axios';
+
 /**
  * Await for specified amount of time
- * @param timeout in milliseceonds
+ * @param timeout in milliseconds
  */
 export const sleep = async (timeout: number) => {
     await new Promise((resolve) => setTimeout(resolve, timeout));
@@ -28,3 +30,31 @@ export const retry = async (func: () => void, timeout = 1000) => {
     console.warn(`Assertion failed after ${Date.now() - startedAt} ms`);
     throw error;
 };
+
+/**
+ * Helper to get item
+ * @param url
+ * @param key
+ */
+export async function getItem(url: string, key: string): Promise<unknown> {
+    const putUrl = `${url}/${key}`;
+    const response = await axios.get(putUrl);
+    return response.data;
+}
+
+/**
+ * Helper to put item
+ * @param url
+ * @param key
+ * @param obj
+ * @param ttl in milliseconds
+ */
+export async function putItem(url: string, key: string, obj: unknown, ttl?: number): Promise<unknown> {
+    const putUrl = `${url}/${key}${ttl ? '/' + ttl : ''}`;
+    const response = await axios.post(putUrl, obj, {
+        headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+        },
+    });
+    return response.data;
+}
