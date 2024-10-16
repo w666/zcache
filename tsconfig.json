@@ -30,7 +30,6 @@
     "noPropertyAccessFromIndexSignature": true,
     "allowUnusedLabels": true,
     "allowUnreachableCode": true,
-    //"skipLibCheck": true 
   },
   "include": [
     "./src/**/*",

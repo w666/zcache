@@ -1,5 +1,5 @@
 import KVStore from '../src/kvStore';
-import { retry, sleep } from './testUtils';
+import { retryAssertEqual, sleep } from './testUtils';
 
 describe('Storage test', () => {
     test('Get item that does not exist', async () => {
@@ -24,7 +24,7 @@ describe('Storage test', () => {
         expect(res2).toEqual(false);
         expect(store.get('key1')).toEqual({ someData: 'test data' });
 
-        await retry(() => expect(store.set('key1', { someData: 'new data' }, 200)).toEqual(true));
+        await retryAssertEqual(() => store.set('key1', { someData: 'new data' }, 200), true);
         expect(store.get('key1')).toEqual({ someData: 'new data' });
     });
 

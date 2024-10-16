@@ -76,6 +76,14 @@ class KVStore {
     public getSize(): number {
         return this.store.size;
     }
+
+    public getMaxStorageSize(): number {
+        return this.maxStorageSize;
+    }
+
+    public getDefaultTTL(): number {
+        return this.defaultTTL;
+    }
 }
 
 export default KVStore;

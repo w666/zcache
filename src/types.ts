@@ -3,11 +3,16 @@ export type GetResponse = {
 };
 
 export type PutResponse = {
-    result: boolean;
+    putResult: boolean;
 };
 
 export type InvalidRequestError = {
-    code: 400;
     error: string;
     message: string;
+};
+
+export type Stats = {
+    defaultTTL: number;
+    maxStorageSize: number;
+    storageUsed: number;
 };

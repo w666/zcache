@@ -9,21 +9,23 @@ export const sleep = async (timeout: number) => {
 };
 
 /**
- * Retry to execute function within specified timeout, exit on success
+ * Retry to execute function and compare result with provided value within specified timeout, exit on success
  * @param func function to execute
  * @param timeout timeout in millisecinds
  * @returns
  */
-export const retry = async (func: () => void, timeout = 1000) => {
+export const retryAssertEqual = async (func: () => unknown, expectedValue: unknown, timeout = 5000) => {
     const startedAt = Date.now();
     let error: Error = new Error(`Retry did not run`);
     while (startedAt + timeout > Date.now()) {
         try {
-            func();
+            const actualValue = await func();
+            expect(actualValue).toEqual(expectedValue);
             console.warn(`Assertion succeeded after ${Date.now() - startedAt} ms`);
             return;
         } catch (err: unknown) {
-            error = err instanceof Error ? err : new Error(`Unknow  error`);
+            error = err instanceof Error ? err : new Error(`Unknown  error`);
+            console.warn(`Assert failed, re-trying`, err);
             await sleep(100);
         }
     }
@@ -37,8 +39,8 @@ export const retry = async (func: () => void, timeout = 1000) => {
  * @param key
  */
 export async function getItem(url: string, key: string): Promise<unknown> {
-    const putUrl = `${url}/${key}`;
-    const response = await axios.get(putUrl);
+    const getUrl = `${url}/${key}`;
+    const response = await axios.get(getUrl, { timeout: 100 });
     return response.data;
 }
 
@@ -46,8 +48,6 @@ export async function getItem(url: string, key: string): Promise<unknown> {
  * Helper to put item
  * @param url
  * @param key
- * @param obj
- * @param ttl in milliseconds
  */
 export async function putItem(url: string, key: string, obj: unknown, ttl?: number): Promise<unknown> {
     const putUrl = `${url}/${key}${ttl ? '/' + ttl : ''}`;
@@ -55,6 +55,16 @@ export async function putItem(url: string, key: string, obj: unknown, ttl?: numb
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
         },
+        timeout: 100,
     });
+    return response.data;
+}
+
+/**
+ * Helper to get server stats
+ * @param url
+ */
+export async function getHealth(url: string): Promise<unknown> {
+    const response = await axios.get(url, { timeout: 100 });
     return response.data;
 }

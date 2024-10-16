@@ -1,7 +1,7 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import http from 'http';
 import KVStore from './kvStore';
-import { GetResponse, InvalidRequestError, PutResponse } from './types';
+import { GetResponse, InvalidRequestError, PutResponse, Stats } from './types';
 import { AddressInfo } from 'net';
 
 class KVServer {
@@ -17,33 +17,67 @@ class KVServer {
         this.store = new KVStore(maxStorageSize, defaultTTL);
     }
 
+    private handlePutResponse(res: Response, putRes: PutResponse) {
+        if (putRes.putResult) {
+            console.log(`return 1`);
+            res.status(201).json(putRes);
+            return;
+        }
+        console.log(`return 2`);
+        res.status(432).json(putRes);
+    }
+
     private registerRoutes() {
         this.app.use(express.json());
-        this.app.use((_req, res, next) => {
+        this.app.use((_req: Request, res: Response, next: NextFunction) => {
             res.header('Content-Type', 'application/json');
             next();
         });
 
-        this.app.route('/kv/v1/get/:key').get((req, res) => {
-            const getResp: GetResponse = {
-                data: this.store.get(req.params.key) || null,
+        this.app.route('/kv/v1/health').get((_req: Request, res: Response) => {
+            const healthResp: Stats = {
+                defaultTTL: this.store.getDefaultTTL(),
+                maxStorageSize: this.store.getMaxStorageSize(),
+                storageUsed: this.store.getSize(),
             };
+            res.json(healthResp);
+        });
+
+        this.app.route('/kv/v1/get/:key').get((req: Request, res: Response) => {
+            const key = req.params['key'];
+
+            if (!key) {
+                const errResp: InvalidRequestError = {
+                    error: `Invalid request`,
+                    message: `key must be string or number`,
+                };
+                res.status(400).json(errResp);
+                return;
+            }
+
+            const getResp: GetResponse = {
+                data: this.store.get(key) || null,
+            };
+            if (getResp.data) {
+                res.status(200).json(getResp);
+                return;
+            }
+            res.status(200).json(getResp);
             res.json(getResp);
         });
 
-        this.app.route('/kv/v1/put/:key').post((req, res) => {
+        this.app.route('/kv/v1/put/:key').post((req, res: Response) => {
             const putResp: PutResponse = {
-                result: this.store.set(req.params.key, req.body),
+                putResult: this.store.set(req.params.key, req.body),
             };
-            res.json(putResp);
+            this.handlePutResponse(res, putResp);
         });
 
-        this.app.route('/kv/v1/put/:key/:ttl').post((req, res) => {
+        this.app.route('/kv/v1/put/:key/:ttl').post((req, res: Response) => {
             const ttl = Number(req.params.ttl);
 
             if (isNaN(ttl)) {
                 const errResp: InvalidRequestError = {
-                    code: 400,
                     error: `Invalid request`,
                     message: `ttl parameter must be a number`,
                 };
@@ -51,9 +85,10 @@ class KVServer {
             }
 
             const putResp: PutResponse = {
-                result: this.store.set(req.params.key, req.body, ttl),
+                putResult: this.store.set(req.params.key, req.body, ttl),
             };
-            res.json(putResp);
+
+            this.handlePutResponse(res, putResp);
         });
     }
 
@@ -67,8 +102,22 @@ class KVServer {
         );
     }
 
-    public stop() {
-        this.server?.close();
+    public async stop() {
+        if (this.server) {
+            let isClosed = false;
+
+            this.server.close((err: unknown) => {
+                if (err) {
+                    console.log(`Failed to stop server`, err);
+                }
+                isClosed = true;
+            });
+
+            const waitUntil = Date.now() + 5000;
+            while (waitUntil > Date.now() && !isClosed) {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+        }
     }
 
     public getInstance() {

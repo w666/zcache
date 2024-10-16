@@ -32,21 +32,38 @@ describe('Storage test', () => {
             });
     });
 
-    test('Put new item and then get existing item Axios', async () => {
+    test('Get item that does not exist, key is number', async () => {
+        await request(server.getInstance())
+            .get('/kv/v1/get/123456')
+            .expect('Content-Type', 'application/json; charset=utf-8')
+            .expect(200)
+            .then((res: Response) => {
+                const apiResp: PutResponse = res.body;
+                expect(apiResp).toEqual({ data: null });
+            });
+    });
+
+    test('Put new item then get existing item, key is a string (Axios)', async () => {
         await putItem(urlPut, 'key1', { item1: 1, item2: 'two' }, 1000);
         const resp = await getItem(urlGet, 'key1');
         expect(resp).toEqual({ data: { item1: 1, item2: 'two' } });
     });
 
-    test('Put new item and then get existing item', async () => {
+    test('Put new item then get existing item, key is a number (Axios)', async () => {
+        await putItem(urlPut, '123', { item1: 1, item2: 'two' }, 1000);
+        const resp = await getItem(urlGet, '123');
+        expect(resp).toEqual({ data: { item1: 1, item2: 'two' } });
+    });
+
+    test('Put new item then get existing item', async () => {
         await request(server.getInstance())
             .post('/kv/v1/put/key2')
             .send({ item1: 1, item2: 'two' })
             .expect('Content-Type', 'application/json; charset=utf-8')
-            .expect(200)
+            .expect(201)
             .then((res: Response) => {
                 const apiResp: PutResponse = res.body;
-                expect(apiResp).toEqual({ result: true });
+                expect(apiResp).toEqual({ putResult: true });
             });
         await request(server.getInstance())
             .get('/kv/v1/get/key2')
@@ -63,10 +80,10 @@ describe('Storage test', () => {
             .post('/kv/v1/put/key60000/60000')
             .send({ item1: 1, item2: 'two' })
             .expect('Content-Type', 'application/json; charset=utf-8')
-            .expect(200)
+            .expect(201)
             .then((res: Response) => {
                 const apiResp: PutResponse = res.body;
-                expect(apiResp).toEqual({ result: true });
+                expect(apiResp).toEqual({ putResult: true });
             });
     });
 
@@ -79,10 +96,24 @@ describe('Storage test', () => {
             .post('/kv/v1/put/keyThatShouldExpire/60000')
             .send({ item1: 1, item2: 'two' })
             .expect('Content-Type', 'application/json; charset=utf-8')
-            .expect(200)
+            .expect(201)
             .then((res: Response) => {
                 const apiResp: PutResponse = res.body;
-                expect(apiResp).toEqual({ result: true });
+                expect(apiResp).toEqual({ putResult: true });
+            });
+    });
+
+    test('Put item does not override existing item if TTL not expired', async () => {
+        await putItem(urlPut, 'keyNotExpired', { test: 'test' }, 10000);
+
+        await request(server.getInstance())
+            .post('/kv/v1/put/keyNotExpired/60000')
+            .send({ item1: 1, item2: 'two' })
+            .expect('Content-Type', 'application/json; charset=utf-8')
+            .expect(432)
+            .then((res: Response) => {
+                const apiResp: PutResponse = res.body;
+                expect(apiResp).toEqual({ putResult: false });
             });
     });
 
@@ -95,7 +126,6 @@ describe('Storage test', () => {
             .then((res: Response) => {
                 const apiResp: InvalidRequestError = res.body;
                 expect(apiResp).toEqual({
-                    code: 400,
                     error: 'Invalid request',
                     message: 'ttl parameter must be a number',
                 });
