@@ -9,7 +9,6 @@
     "dev": "npm run build && npm run start",
     "test": "jest --detectOpenHandles",
     "test:coverage": "jest --coverage --detectOpenHandles"
-
   },
   "repository": {
     "type": "git",
@@ -24,6 +23,12 @@
   ],
   "author": "Vasily Martynov",
   "license": "MIT",
+  "exports": {
+    ".": "./dist/index.js",
+    "./store": "./dist/src/kvStore.js",
+    "./server": "./dist/src/kvHttpServer.js",
+    "./types": "./dist/src/types.js"
+  },
   "dependencies": {
     "express": "^4.21.1",
     "typescript": "^5.6.2"
